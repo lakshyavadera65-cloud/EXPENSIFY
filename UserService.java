@@ -11,9 +11,12 @@ import org.springframework.stereotype.Service;
 public class UserService {
     private final AppUserRepository users;
     private final JwtService jwtService;
+    private final LoginAttemptService loginAttemptService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public UserService(AppUserRepository users, JwtService jwtService) { this.users = users; this.jwtService = jwtService; }
+    public UserService(AppUserRepository users, JwtService jwtService, LoginAttemptService loginAttemptService) { 
+        this.users = users; this.jwtService = jwtService; this.loginAttemptService = loginAttemptService; 
+    }
 
     public AppUser register(RegisterUserRequest request) {
         if (users.findByEmail(request.getEmail()).isPresent()) {
@@ -31,14 +34,36 @@ public class UserService {
     }
 
     public LoginResponse login(UserLoginRequest request) {
-        java.util.Optional<AppUser> foundUser = users.findByEmail(request.getEmail());
-        if (foundUser.isEmpty()) throw new IllegalArgumentException("Invalid email or password");
-        AppUser user = foundUser.get();
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+        String email = request.getEmail();
+        if (loginAttemptService.isBlocked(email)) {
+            throw new RuntimeException("Account is temporarily locked due to too many failed login attempts");
+        }
+        java.util.Optional<AppUser> foundUser = users.findByEmail(email);
+        if (foundUser.isEmpty()) {
+            loginAttemptService.loginFailed(email);
             throw new IllegalArgumentException("Invalid email or password");
         }
-        String token = jwtService.generateToken(user.getId());
-        return new LoginResponse(user.getId(), user.getName(), user.getEmail(), user.getRole(), token);
+        AppUser user = foundUser.get();
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            loginAttemptService.loginFailed(email);
+            throw new IllegalArgumentException("Invalid email or password");
+        }
+        loginAttemptService.loginSucceeded(email);
+        String token = jwtService.generateToken(user.getId(), user.getRole().name());
+        String refreshToken = jwtService.generateRefreshToken(user.getId());
+        return new LoginResponse(user.getId(), user.getName(), user.getEmail(), user.getRole(), token, refreshToken);
+    }
+
+    public LoginResponse refreshToken(RefreshTokenRequest request) {
+        String refreshToken = request.getRefreshToken();
+        if (!jwtService.isRefreshTokenValid(refreshToken)) {
+            throw new RuntimeException("Invalid refresh token");
+        }
+        Long userId = jwtService.extractUserId(refreshToken);
+        AppUser user = getUser(userId);
+        String newToken = jwtService.generateToken(user.getId(), user.getRole().name());
+        String newRefreshToken = jwtService.generateRefreshToken(user.getId());
+        return new LoginResponse(user.getId(), user.getName(), user.getEmail(), user.getRole(), newToken, newRefreshToken);
     }
 
     public AppUser getUser(Long id) {

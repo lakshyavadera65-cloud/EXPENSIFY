@@ -1,8 +1,11 @@
 package com.expensify.backend.controller;
 import com.expensify.backend.dto.CustomerResponse; import com.expensify.backend.model.AppUser; import com.expensify.backend.service.ManagerService; import org.springframework.web.bind.annotation.*; import java.util.List; import java.util.stream.Collectors;
 import jakarta.servlet.http.HttpServletRequest;
+import com.expensify.backend.annotation.RequireRole;
+import com.expensify.backend.enums.UserRole;
 
 @RestController @RequestMapping("/api/managers")
+@RequireRole(UserRole.MANAGER)
 public class ManagerController {
     private final ManagerService managers; public ManagerController(ManagerService managers){this.managers=managers;}
 

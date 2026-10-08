@@ -1,7 +1,12 @@
 package com.expensify.backend.dto;
 import com.expensify.backend.enums.UserRole;
+import jakarta.validation.constraints.*;
+
 public class RegisterUserRequest {
-    private String name; private String email; private String password; private UserRole role;
+    @NotBlank(message="Name is required") private String name; 
+    @NotBlank(message="Email is required") @Email(message="Invalid email") private String email; 
+    @NotBlank(message="Password is required") @Size(min=4, message="Password must have at least 4 characters") private String password; 
+    private UserRole role;
     private String city; private String country; private Double latitude; private Double longitude;
     public String getName(){return name;} public void setName(String v){name=v;}
     public String getEmail(){return email;} public void setEmail(String v){email=v;}

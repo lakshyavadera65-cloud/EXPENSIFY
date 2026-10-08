@@ -1,6 +1,7 @@
 package com.expensify.backend.controller;
 import com.expensify.backend.dto.*; import com.expensify.backend.model.AppUser; import com.expensify.backend.service.*; import org.springframework.web.bind.annotation.*; import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 
 @RestController @RequestMapping("/api/location-alerts")
 public class LocationAlertController {
@@ -16,7 +17,7 @@ public class LocationAlertController {
         verifyOwnership(req, userId);
         return alerts.getAlerts(users.getUser(userId));
     }
-    @PostMapping("/coordinates") public List<LocationAlertResponse> coordinates(@RequestBody LocationRequest r){AppUser temp=new AppUser();temp.setLatitude(r.getLatitude());temp.setLongitude(r.getLongitude());return alerts.getAlerts(temp);}
+    @PostMapping("/coordinates") public List<LocationAlertResponse> coordinates(@Valid @RequestBody LocationRequest r){AppUser temp=new AppUser();temp.setLatitude(r.getLatitude());temp.setLongitude(r.getLongitude());return alerts.getAlerts(temp);}
     @PostMapping("/payment-disruption") public String payment(@RequestParam String title,@RequestParam String message,@RequestParam(defaultValue="MEDIUM") String severity){payment.add(title,message,severity,"EXPENSIFY ADMIN");return "Payment alert added";}
     @PostMapping("/user/{userId}/email") public String email(@PathVariable Long userId, HttpServletRequest req){
         verifyOwnership(req, userId);

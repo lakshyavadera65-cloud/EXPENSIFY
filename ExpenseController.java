@@ -1,6 +1,7 @@
 package com.expensify.backend.controller;
 import com.expensify.backend.dto.ExpenseRequest; import com.expensify.backend.model.Expense; import com.expensify.backend.service.ExpenseService; import org.springframework.web.bind.annotation.*; import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 
 @RestController @RequestMapping("/api/expenses")
 public class ExpenseController {
@@ -11,7 +12,7 @@ public class ExpenseController {
         if (authenticatedId == null || !authenticatedId.equals(resourceUserId)) throw new RuntimeException("Unauthorized");
     }
 
-    @PostMapping("/user/{userId}") public Expense add(@PathVariable Long userId,@RequestBody ExpenseRequest request, HttpServletRequest req){
+    @PostMapping("/user/{userId}") public Expense add(@PathVariable Long userId,@Valid @RequestBody ExpenseRequest request, HttpServletRequest req){
         verifyOwnership(req, userId);
         return expenses.add(userId,request);
     }

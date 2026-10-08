@@ -31,7 +31,30 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
 
         Long userId = jwtService.extractUserId(token);
+        String userRole = jwtService.extractRole(token);
         request.setAttribute("authenticatedUserId", userId);
+        request.setAttribute("authenticatedUserRole", userRole);
+
+        if (handler instanceof org.springframework.web.method.HandlerMethod) {
+            org.springframework.web.method.HandlerMethod handlerMethod = (org.springframework.web.method.HandlerMethod) handler;
+            com.expensify.backend.annotation.RequireRole requireRole = handlerMethod.getMethodAnnotation(com.expensify.backend.annotation.RequireRole.class);
+            if (requireRole == null) {
+                requireRole = handlerMethod.getBeanType().getAnnotation(com.expensify.backend.annotation.RequireRole.class);
+            }
+            if (requireRole != null) {
+                boolean hasRole = false;
+                for (com.expensify.backend.enums.UserRole role : requireRole.value()) {
+                    if (role.name().equals(userRole)) {
+                        hasRole = true;
+                        break;
+                    }
+                }
+                if (!hasRole) {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    return false;
+                }
+            }
+        }
         return true;
     }
 }
