@@ -1,34 +1,14 @@
 {
-  "name": "my-project",
-  "version": "0.1.0",
+  "name": "expensify-workspace",
+  "version": "1.0.0",
   "private": true,
-  "packageManager": "pnpm@12.3.4",
+  "description": "EXPENSIFY All-In-One Full-Stack Application",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
-  },
-  "dependencies": {
-    "@base-ui/react": "^1.5.0",
-    "@vercel/analytics": "1.6.1",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "lucide-react": "^1.16.0",
-    "next": "16.3.3",
-    "react": "^19",
-    "react-dom": "^19",
-    "recharts": "^3.10.1",
-    "shadcn": "^4.11.0",
-    "tailwind-merge": "^3.3.1",
-    "tw-animate-css": "^1.4.0"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^24",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "postcss": "^8.5",
-    "tailwindcss": "^4.3.3",
-    "typescript": "5.7.3"
+    "dev": "./start.sh",
+    "dev:backend": "cd backend && mvn spring-boot:run -Dspring-boot.run.profiles=dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:backend": "cd backend && mvn clean package -DskipTests",
+    "build:frontend": "cd frontend && npm run build",
+    "build": "npm run build:backend && npm run build:frontend"
   }
 }

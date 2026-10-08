@@ -1,53 +1,99 @@
-# EXPENSIFY Backend - Beginner Version
+# EXPENSIFY — Full-Stack Expense & Budget Management
 
-This is the **simple Java/Spring Boot backend** for EXPENSIFY.
+A full-stack enterprise expense tracking and budget monitoring application built with **Spring Boot 3 (Java 21)** and **Next.js 16 (React 19, Tailwind CSS, Shadcn UI)**.
 
-The code is intentionally written so a beginner can understand the main logic.
+---
 
-## Main idea
+## 📁 Repository Structure
 
-Frontend -> Controller -> Service -> Repository -> Database
-
-- **Controller:** receives requests from the frontend.
-- **Service:** contains the actual business logic.
-- **Repository:** talks to the database.
-- **Model:** represents database tables.
-
-## Features
-
-- Register and login for Customer, Employee, Manager, Head and Admin.
-- Add, view and delete expenses.
-- Daily/weekly/monthly/yearly budgets.
-- Change a budget limit after password verification.
-- Budget alerts at 80%, 85%, 90%, 95% and 100%.
-- Manager can manage up to 1000 customers.
-- Dashboard data for daily and monthly charts.
-- Weather/location alert integration.
-- Payment-disruption alerts can be added by an admin endpoint.
-- Optional email alerts.
-- Docker/Render deployment files.
-
-## Important
-
-The SQL/database teammate creates the PostgreSQL database and tables. This backend uses `spring.jpa.hibernate.ddl-auto=validate`, so it checks that the database schema matches the Java models instead of creating the tables itself.
-
-No frontend code is included.
-
-## Run locally
-
-1. Install Java 21 and Maven.
-2. Put your PostgreSQL values in environment variables or `.env`.
-3. Make sure the database tables match `DATABASE_CONTRACT.md`.
-4. Run:
-
-```bash
-mvn spring-boot:run
+```
+EXPENSIFY/
+├── backend/                  # Java / Spring Boot 3 REST API
+│   ├── src/main/java/...     # Controllers, Services, Entities, DTOs, Security
+│   ├── src/main/resources/   # application.properties
+│   ├── pom.xml               # Maven build file with dependencies
+│   ├── Dockerfile            # Container deployment configuration
+│   ├── render.yaml           # Render deployment spec
+│   ├── DATABASE_CONTRACT.md  # Database schema documentation
+│   └── TEAM_API_CONTRACT.md  # REST API specifications
+│
+├── frontend/                 # Next.js 16 + React 19 Frontend
+│   ├── app/                  # Next.js App Router (Dashboard, Expenses, Auth)
+│   ├── components/           # UI components (Shadcn, forms, charts)
+│   ├── lib/                  # API client, auth context, mock data, utilities
+│   ├── public/               # Static assets & icons
+│   ├── package.json          # Dependencies & npm scripts
+│   └── tsconfig.json         # TypeScript configuration
+│
+├── .gitignore                # Root gitignore for Java, Node, and IDE files
+└── README.md                 # Project documentation
 ```
 
-Backend: `http://localhost:8080`
+---
 
-Health check: `GET /api/health`
+## 🚀 Getting Started
 
-## Beginner viva sentence
+### Prerequisites
+- **Java 21** or higher
+- **Maven 3.8+**
+- **Node.js 18+** (Node v20+ recommended)
+- **PostgreSQL 14+** (for live backend database)
 
-> "The controller receives the request, the service does the work, the repository communicates with the database, and the model represents the table."
+---
+
+### 1. Running the Backend (Spring Boot)
+
+1. Open a terminal and navigate to `backend/`:
+   ```bash
+   cd backend
+   ```
+2. Configure your environment variables or update `src/main/resources/application.properties`:
+   - `DB_URL`: PostgreSQL connection URL (default: `jdbc:postgresql://localhost:5432/expensify`)
+   - `DB_USERNAME`: Database username (default: `postgres`)
+   - `DB_PASSWORD`: Database password
+   - `WEATHER_API_KEY`: (Optional) Google Weather API key
+3. Build and start the backend:
+   ```bash
+   mvn spring-boot:run
+   ```
+4. The API server will be available at:
+   - **Base URL:** `http://localhost:8080`
+   - **Health Check:** `http://localhost:8080/api/health`
+
+---
+
+### 2. Running the Frontend (Next.js)
+
+1. Open a terminal and navigate to `frontend/`:
+   ```bash
+   cd frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   # or with pnpm
+   pnpm install
+   ```
+3. Set up environment variables (optional):
+   ```bash
+   cp .env.example .env.local
+   ```
+   *Note: If `NEXT_PUBLIC_API_URL` is omitted, the frontend automatically runs in demo mode using fast in-memory mock data.*
+4. Start the development server:
+   ```bash
+   npm run dev
+   # or
+   pnpm dev
+   ```
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## 🔒 Security & Architecture Features
+
+- **JWT Authentication**: Secure stateless token authentication via interceptors.
+- **Role-Based Access Control**: Separate privileges for `CUSTOMER`, `EMPLOYEE`, `MANAGER`, `HEAD`, and `ADMIN`.
+- **IDOR Protection**: Validated user permissions ensuring users can only read/write their own budgets and expenses.
+- **Budget Threshold Alerts**: Real-time automated alerts triggering at 80%, 85%, 90%, 95%, and 100% of defined budget limits.
+- **Location & Weather Alerts**: Optional external integration for weather conditions.
+- **Responsive Dashboard**: Data visualization with Recharts, dark/light theme support, and accessible UI components.
