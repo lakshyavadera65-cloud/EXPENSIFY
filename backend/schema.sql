@@ -1,5 +1,5 @@
 -- =====================================================================
--- EXPENSIFY Database Schema & Seed Data
+-- EXPENSIFY Complete Database Schema (PostgreSQL & H2 Compatible)
 -- =====================================================================
 
 CREATE TABLE IF NOT EXISTS app_users (
@@ -22,10 +22,29 @@ CREATE TABLE IF NOT EXISTS expenses (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,
     amount DECIMAL(12,2) NOT NULL,
-    category VARCHAR(100),
+    category VARCHAR(50) NOT NULL DEFAULT 'OTHER',
+    payment_method VARCHAR(50) NOT NULL DEFAULT 'UPI',
     description VARCHAR(255),
     expense_date DATE NOT NULL,
     CONSTRAINT fk_expense_user FOREIGN KEY (user_id) REFERENCES app_users (id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS recurring_expenses (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    amount DECIMAL(12,2) NOT NULL,
+    category VARCHAR(50) NOT NULL DEFAULT 'OTHER',
+    payment_method VARCHAR(50) NOT NULL DEFAULT 'UPI',
+    frequency VARCHAR(20) NOT NULL DEFAULT 'MONTHLY',
+    start_date DATE NOT NULL,
+    next_due_date DATE NOT NULL,
+    end_date DATE NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    last_generated_date DATE NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_recurring_expense_user FOREIGN KEY (user_id) REFERENCES app_users (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS budgets (
@@ -49,7 +68,15 @@ CREATE TABLE IF NOT EXISTS notifications (
     CONSTRAINT fk_notification_user FOREIGN KEY (user_id) REFERENCES app_users (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- =====================================================================
+-- Performance Indexes for Financial Queries & Analytics
+-- =====================================================================
 CREATE INDEX IF NOT EXISTS idx_expenses_user_id ON expenses(user_id);
+CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(expense_date);
+CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category);
+CREATE INDEX IF NOT EXISTS idx_expenses_payment_method ON expenses(payment_method);
+CREATE INDEX IF NOT EXISTS idx_recurring_user ON recurring_expenses(user_id);
+CREATE INDEX IF NOT EXISTS idx_recurring_due ON recurring_expenses(active, next_due_date);
 CREATE INDEX IF NOT EXISTS idx_budgets_user_id ON budgets(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_manager_id ON app_users(manager_id);

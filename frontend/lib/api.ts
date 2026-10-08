@@ -13,18 +13,26 @@ import {
   DEMO_USERS,
 } from './mock-data'
 import type {
+  AnalyticsSummaryDTO,
   AppNotification,
   AuthResponse,
   Budget,
+  CategorySpendingDTO,
   ChangeLimitPayload,
   Customer,
   CustomerDetail,
+  DailySpendingDTO,
   DashboardData,
   Expense,
   LoginPayload,
+  MonthlySpendingDTO,
   NewBudget,
   NewExpense,
+  NewRecurringExpense,
+  PaymentMethodSpendingDTO,
+  RecurringExpense,
   RegisterPayload,
+  Role,
   User,
   Weather,
 } from './types'
@@ -254,4 +262,226 @@ export function getCustomerDetail(customerId: number): Promise<CustomerDetail> {
       return computeCustomerDetail(c)
     }, 450)
   return request(`/api/customers/${customerId}/detail`)
+}
+
+/* ----------------------------- Analytics ---------------------------- */
+
+export function getAnalyticsSummary(startDate?: string, endDate?: string): Promise<AnalyticsSummaryDTO> {
+  const params = new URLSearchParams()
+  if (startDate) params.set('startDate', startDate)
+  if (endDate) params.set('endDate', endDate)
+  const q = params.toString() ? `?${params.toString()}` : ''
+  if (USE_MOCK) {
+    return mock(() => {
+      const totalSpending = db.expenses.reduce((s, e) => s + e.amount, 0)
+      return {
+        totalSpending,
+        todaySpending: 450,
+        thisWeekSpending: 2300,
+        thisMonthSpending: totalSpending,
+        thisYearSpending: totalSpending,
+        averageDailySpending: Math.round(totalSpending / 30),
+        transactionCount: db.expenses.length,
+        highestSpendingCategory: 'Food',
+        highestSpendingDay: '2026-10-01',
+        totalBudget: 25000,
+        remainingBudget: 15000,
+        budgetUsedPercentage: 40.0,
+        categorySpending: [
+          { category: 'FOOD', totalAmount: 3200, transactionCount: 4, percentage: 40 },
+          { category: 'TRAVEL', totalAmount: 1500, transactionCount: 2, percentage: 20 },
+          { category: 'BILLS', totalAmount: 2000, transactionCount: 1, percentage: 25 },
+          { category: 'SHOPPING', totalAmount: 1200, transactionCount: 2, percentage: 15 },
+        ],
+        paymentMethodSpending: [
+          { paymentMethod: 'UPI', totalAmount: 4500, transactionCount: 6, percentage: 55 },
+          { paymentMethod: 'CREDIT_CARD', totalAmount: 2400, transactionCount: 2, percentage: 30 },
+          { paymentMethod: 'CASH', totalAmount: 1000, transactionCount: 1, percentage: 15 },
+        ],
+        dailySpending: [],
+        monthlySpending: [],
+      }
+    })
+  }
+  return request(`/api/analytics/summary${q}`)
+}
+
+export function getCategoryAnalytics(startDate?: string, endDate?: string): Promise<CategorySpendingDTO[]> {
+  const params = new URLSearchParams()
+  if (startDate) params.set('startDate', startDate)
+  if (endDate) params.set('endDate', endDate)
+  const q = params.toString() ? `?${params.toString()}` : ''
+  return request(`/api/analytics/categories${q}`)
+}
+
+export function getPaymentMethodAnalytics(startDate?: string, endDate?: string): Promise<PaymentMethodSpendingDTO[]> {
+  const params = new URLSearchParams()
+  if (startDate) params.set('startDate', startDate)
+  if (endDate) params.set('endDate', endDate)
+  const q = params.toString() ? `?${params.toString()}` : ''
+  return request(`/api/analytics/payment-methods${q}`)
+}
+
+export function getMonthlyAnalytics(year?: number): Promise<MonthlySpendingDTO[]> {
+  const q = year ? `?year=${year}` : ''
+  return request(`/api/analytics/monthly${q}`)
+}
+
+export function getDailyAnalytics(startDate?: string, endDate?: string): Promise<DailySpendingDTO[]> {
+  const params = new URLSearchParams()
+  if (startDate) params.set('startDate', startDate)
+  if (endDate) params.set('endDate', endDate)
+  const q = params.toString() ? `?${params.toString()}` : ''
+  return request(`/api/analytics/daily${q}`)
+}
+
+/* ------------------------------ Reports ----------------------------- */
+
+export async function downloadExpenseCsv(startDate?: string, endDate?: string): Promise<void> {
+  const params = new URLSearchParams()
+  if (startDate) params.set('startDate', startDate)
+  if (endDate) params.set('endDate', endDate)
+  const q = params.toString() ? `?${params.toString()}` : ''
+
+  const headers = new Headers()
+  if (authToken) headers.set('Authorization', `Bearer ${authToken}`)
+
+  const res = await fetch(`${API_URL}/api/reports/expenses/csv${q}`, { headers })
+  if (!res.ok) throw new ApiError('Failed to download CSV report', res.status)
+
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `expenses-${startDate || 'all'}-to-${endDate || 'now'}.csv`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+export async function downloadExpensePdf(startDate?: string, endDate?: string): Promise<void> {
+  const params = new URLSearchParams()
+  if (startDate) params.set('startDate', startDate)
+  if (endDate) params.set('endDate', endDate)
+  const q = params.toString() ? `?${params.toString()}` : ''
+
+  const headers = new Headers()
+  if (authToken) headers.set('Authorization', `Bearer ${authToken}`)
+
+  const res = await fetch(`${API_URL}/api/reports/expenses/pdf${q}`, { headers })
+  if (!res.ok) throw new ApiError('Failed to download PDF report', res.status)
+
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `expense-report-${startDate || 'all'}-to-${endDate || 'now'}.pdf`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+/* ------------------------ Recurring Expenses ------------------------ */
+
+const mockRecurringExpenses: RecurringExpense[] = [
+  {
+    id: 1,
+    description: 'Netflix Subscription',
+    amount: 649,
+    category: 'SUBSCRIPTIONS',
+    paymentMethod: 'CREDIT_CARD',
+    frequency: 'MONTHLY',
+    startDate: '2026-01-01',
+    nextDueDate: '2026-11-01',
+    active: true,
+  },
+  {
+    id: 2,
+    description: 'House Rent',
+    amount: 18000,
+    category: 'RENT',
+    paymentMethod: 'BANK_TRANSFER',
+    frequency: 'MONTHLY',
+    startDate: '2026-01-05',
+    nextDueDate: '2026-11-05',
+    active: true,
+  },
+]
+
+export function getRecurringExpenses(): Promise<RecurringExpense[]> {
+  if (USE_MOCK) return mock(() => [...mockRecurringExpenses], 400)
+  return request('/api/recurring-expenses')
+}
+
+export function getRecurringExpense(id: number): Promise<RecurringExpense> {
+  if (USE_MOCK) {
+    return mock(() => {
+      const found = mockRecurringExpenses.find((r) => r.id === id)
+      if (!found) throw new ApiError('Recurring expense not found', 404)
+      return found
+    })
+  }
+  return request(`/api/recurring-expenses/${id}`)
+}
+
+export function createRecurringExpense(payload: NewRecurringExpense): Promise<RecurringExpense> {
+  if (USE_MOCK) {
+    return mock(() => {
+      const created: RecurringExpense = {
+        ...payload,
+        id: Math.floor(Math.random() * 9000) + 100,
+        nextDueDate: payload.nextDueDate || payload.startDate,
+        active: true,
+      }
+      mockRecurringExpenses.push(created)
+      return created
+    })
+  }
+  return request('/api/recurring-expenses', { method: 'POST', body: json(payload) })
+}
+
+export function updateRecurringExpense(id: number, payload: Partial<RecurringExpense>): Promise<RecurringExpense> {
+  if (USE_MOCK) {
+    return mock(() => {
+      const index = mockRecurringExpenses.findIndex((r) => r.id === id)
+      if (index === -1) throw new ApiError('Recurring expense not found', 404)
+      mockRecurringExpenses[index] = { ...mockRecurringExpenses[index], ...payload }
+      return mockRecurringExpenses[index]
+    })
+  }
+  return request(`/api/recurring-expenses/${id}`, { method: 'PUT', body: json(payload) })
+}
+
+export function deleteRecurringExpense(id: number): Promise<void> {
+  if (USE_MOCK) {
+    return mock(() => {
+      const idx = mockRecurringExpenses.findIndex((r) => r.id === id)
+      if (idx !== -1) mockRecurringExpenses.splice(idx, 1)
+    })
+  }
+  return request(`/api/recurring-expenses/${id}`, { method: 'DELETE' })
+}
+
+export function pauseRecurringExpense(id: number): Promise<RecurringExpense> {
+  if (USE_MOCK) {
+    return mock(() => {
+      const item = mockRecurringExpenses.find((r) => r.id === id)
+      if (item) item.active = false
+      return item!
+    })
+  }
+  return request(`/api/recurring-expenses/${id}/pause`, { method: 'PATCH' })
+}
+
+export function resumeRecurringExpense(id: number): Promise<RecurringExpense> {
+  if (USE_MOCK) {
+    return mock(() => {
+      const item = mockRecurringExpenses.find((r) => r.id === id)
+      if (item) item.active = true
+      return item!
+    })
+  }
+  return request(`/api/recurring-expenses/${id}/resume`, { method: 'PATCH' })
 }

@@ -29,18 +29,116 @@ export interface LoginPayload {
   password: string
 }
 
+export type ExpenseCategory =
+  | 'FOOD'
+  | 'TRAVEL'
+  | 'SHOPPING'
+  | 'BILLS'
+  | 'ENTERTAINMENT'
+  | 'HEALTH'
+  | 'EDUCATION'
+  | 'RENT'
+  | 'GROCERIES'
+  | 'SUBSCRIPTIONS'
+  | 'OTHER'
+
+export type ExpensePaymentMethod =
+  | 'CASH'
+  | 'UPI'
+  | 'CREDIT_CARD'
+  | 'DEBIT_CARD'
+  | 'BANK_TRANSFER'
+  | 'WALLET'
+  | 'OTHER'
+
+export type RecurringFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY'
+
 export interface Expense {
   id: number
   userId: number
   title: string
   description?: string
   category: string
+  paymentMethod?: string
   amount: number
   /** ISO date string (yyyy-mm-dd) */
   date: string
 }
 
 export type NewExpense = Omit<Expense, 'id' | 'userId'>
+
+export interface RecurringExpense {
+  id: number
+  userId?: number
+  description: string
+  amount: number
+  category: ExpenseCategory | string
+  paymentMethod: ExpensePaymentMethod | string
+  frequency: RecurringFrequency
+  startDate: string
+  nextDueDate: string
+  endDate?: string | null
+  active: boolean
+  createdAt?: string
+  updatedAt?: string
+}
+
+export type NewRecurringExpense = {
+  description: string
+  amount: number
+  category: ExpenseCategory | string
+  paymentMethod: ExpensePaymentMethod | string
+  frequency: RecurringFrequency
+  startDate: string
+  nextDueDate?: string
+  endDate?: string | null
+}
+
+export interface CategorySpendingDTO {
+  category: string
+  totalAmount: number
+  transactionCount: number
+  percentage: number
+}
+
+export interface PaymentMethodSpendingDTO {
+  paymentMethod: string
+  totalAmount: number
+  transactionCount: number
+  percentage: number
+}
+
+export interface MonthlySpendingDTO {
+  yearMonth: string
+  monthName: string
+  totalAmount: number
+  transactionCount: number
+}
+
+export interface DailySpendingDTO {
+  date: string
+  totalAmount: number
+  transactionCount: number
+}
+
+export interface AnalyticsSummaryDTO {
+  totalSpending: number
+  todaySpending: number
+  thisWeekSpending: number
+  thisMonthSpending: number
+  thisYearSpending: number
+  averageDailySpending: number
+  transactionCount: number
+  highestSpendingCategory: string
+  highestSpendingDay: string
+  totalBudget: number
+  remainingBudget: number
+  budgetUsedPercentage: number
+  categorySpending: CategorySpendingDTO[]
+  paymentMethodSpending: PaymentMethodSpendingDTO[]
+  dailySpending: DailySpendingDTO[]
+  monthlySpending: MonthlySpendingDTO[]
+}
 
 export type BudgetType = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY'
 

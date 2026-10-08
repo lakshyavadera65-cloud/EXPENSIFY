@@ -17,7 +17,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { CategoryIcon, tint } from '@/components/shared/category'
 import { APP_CONFIG, CURRENCIES } from '@/lib/config'
-import { CATEGORIES, getCategoryColor } from '@/lib/constants'
+import { CATEGORIES, PAYMENT_METHODS, getCategoryColor } from '@/lib/constants'
 import { useExpenseActions } from '@/lib/hooks'
 import { usePreferences } from '@/lib/preferences-context'
 import { cn } from '@/lib/utils'
@@ -30,6 +30,7 @@ const schema = z.object({
     .refine((v) => Number(v) <= 10_000_000, 'That looks too large'),
   title: z.string().trim().min(2, 'Add a short description').max(60, 'Keep it under 60 characters'),
   category: z.string().trim().min(1, 'Pick a category').max(24, 'Category name is too long'),
+  paymentMethod: z.string().trim().min(1, 'Pick a payment method'),
   notes: z.string().max(200, 'Keep notes under 200 characters').optional(),
   date: z.string().min(1, 'Pick a date'),
 })
@@ -69,6 +70,7 @@ const defaultValues = (): FormValues => ({
   amount: '',
   title: '',
   category: 'Food',
+  paymentMethod: 'UPI',
   notes: '',
   date: format(APP_CONFIG.today, 'yyyy-MM-dd'),
 })
@@ -88,6 +90,7 @@ function AddExpenseDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
   } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: defaultValues() })
 
   const selectedCategory = watch('category')
+  const selectedPaymentMethod = watch('paymentMethod')
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -95,6 +98,7 @@ function AddExpenseDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
         amount: Math.round(Number(values.amount) * 100) / 100,
         title: values.title,
         category: values.category,
+        paymentMethod: values.paymentMethod,
         description: values.notes || undefined,
         date: values.date,
       })
@@ -208,6 +212,34 @@ function AddExpenseDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
                 </div>
               </div>
               <FieldError errors={[errors.category]} />
+            </FieldSet>
+
+            <FieldSet data-invalid={!!errors.paymentMethod}>
+              <FieldLegend variant="label">Payment Method</FieldLegend>
+              <div className="grid grid-cols-4 gap-2" role="radiogroup" aria-label="Payment Method">
+                {PAYMENT_METHODS.map((pm) => {
+                  const active = selectedPaymentMethod === pm.value
+                  const Icon = pm.icon
+                  return (
+                    <button
+                      key={pm.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => setValue('paymentMethod', pm.value, { shouldValidate: true })}
+                      style={tint(pm.color)}
+                      className={cn(
+                        'flex flex-col items-center gap-1.5 rounded-2xl border border-transparent p-2 text-xs font-medium text-muted-foreground transition-all outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50',
+                        active && 'tint-bg tint-border text-foreground',
+                      )}
+                    >
+                      <Icon className="size-4" />
+                      <span className="truncate">{pm.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <FieldError errors={[errors.paymentMethod]} />
             </FieldSet>
 
             <Field data-invalid={!!errors.date}>

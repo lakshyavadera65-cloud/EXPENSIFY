@@ -1,17 +1,38 @@
 import {
+  Banknote,
+  Building2,
   Clapperboard,
+  CreditCard,
   GraduationCap,
   HeartPulse,
+  Home,
+  Layers,
   Plane,
   Receipt,
+  Repeat,
   ShoppingBag,
+  ShoppingCart,
+  Smartphone,
   Tag,
   UtensilsCrossed,
+  Wallet,
   type LucideIcon,
 } from 'lucide-react'
 import type { Severity } from './types'
 
-export const CATEGORIES = ['Food', 'Travel', 'Bills', 'Shopping', 'Health', 'Entertainment', 'Education'] as const
+export const CATEGORIES = [
+  'Food',
+  'Travel',
+  'Shopping',
+  'Bills',
+  'Entertainment',
+  'Health',
+  'Education',
+  'Rent',
+  'Groceries',
+  'Subscriptions',
+  'Other',
+] as const
 
 export type Category = (typeof CATEGORIES)[number]
 
@@ -23,6 +44,10 @@ export const categoryColors: Record<string, string> = {
   Health: '#34D399',
   Entertainment: '#FBBF24',
   Education: '#2DD4BF',
+  Rent: '#818CF8',
+  Groceries: '#10B981',
+  Subscriptions: '#EC4899',
+  Other: '#94A3B8',
 }
 
 export const categoryIcons: Record<string, LucideIcon> = {
@@ -33,7 +58,21 @@ export const categoryIcons: Record<string, LucideIcon> = {
   Health: HeartPulse,
   Entertainment: Clapperboard,
   Education: GraduationCap,
+  Rent: Home,
+  Groceries: ShoppingCart,
+  Subscriptions: Repeat,
+  Other: Tag,
 }
+
+export const PAYMENT_METHODS = [
+  { value: 'UPI', label: 'UPI', icon: Smartphone, color: '#38BDF8' },
+  { value: 'CASH', label: 'Cash', icon: Banknote, color: '#10B981' },
+  { value: 'CREDIT_CARD', label: 'Credit Card', icon: CreditCard, color: '#F472B6' },
+  { value: 'DEBIT_CARD', label: 'Debit Card', icon: CreditCard, color: '#818CF8' },
+  { value: 'BANK_TRANSFER', label: 'Bank Transfer', icon: Building2, color: '#FBBF24' },
+  { value: 'WALLET', label: 'Wallet', icon: Wallet, color: '#A78BFA' },
+  { value: 'OTHER', label: 'Other', icon: Layers, color: '#94A3B8' },
+] as const
 
 /** Deterministic, vivid color for categories that are not in the map. */
 export function getCategoryColor(category: string): string {

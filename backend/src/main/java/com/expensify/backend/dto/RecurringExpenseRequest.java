@@ -2,21 +2,33 @@ package com.expensify.backend.dto;
 
 import com.expensify.backend.enums.ExpenseCategory;
 import com.expensify.backend.enums.ExpensePaymentMethod;
+import com.expensify.backend.enums.RecurringFrequency;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-public class ExpenseRequest {
-    @NotNull(message = "Expense amount is required")
+public class RecurringExpenseRequest {
+    @NotBlank(message = "Description is required")
+    private String description;
+
+    @NotNull(message = "Amount is required")
     @Positive(message = "Amount must be greater than zero")
     private BigDecimal amount;
 
     private ExpenseCategory category = ExpenseCategory.OTHER;
     private ExpensePaymentMethod paymentMethod = ExpensePaymentMethod.UPI;
+    private RecurringFrequency frequency = RecurringFrequency.MONTHLY;
 
-    private String description;
-    private LocalDate expenseDate;
+    @NotNull(message = "Start date is required")
+    private LocalDate startDate;
+
+    private LocalDate endDate;
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }
@@ -33,24 +45,15 @@ public class ExpenseRequest {
         this.paymentMethod = ExpensePaymentMethod.fromString(pmStr);
     }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-
-    public LocalDate getExpenseDate() { return expenseDate != null ? expenseDate : LocalDate.now(); }
-    public void setExpenseDate(LocalDate expenseDate) { this.expenseDate = expenseDate; }
-
-    // Frontend compatibility helpers for 'title' and 'date'
-    public String getTitle() { return description; }
-    public void setTitle(String title) {
-        if (this.description == null || this.description.isEmpty()) {
-            this.description = title;
-        }
+    public RecurringFrequency getFrequency() { return frequency; }
+    public void setFrequency(RecurringFrequency frequency) { this.frequency = frequency; }
+    public void setFrequency(String freqStr) {
+        this.frequency = RecurringFrequency.fromString(freqStr);
     }
 
-    public LocalDate getDate() { return expenseDate; }
-    public void setDate(LocalDate date) {
-        if (this.expenseDate == null) {
-            this.expenseDate = date;
-        }
-    }
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
 }

@@ -4,7 +4,7 @@ import useSWR, { useSWRConfig } from 'swr'
 import { useCallback } from 'react'
 import * as api from './api'
 import { useAuth } from './auth-context'
-import type { NewBudget, NewExpense } from './types'
+import type { NewBudget, NewExpense, NewRecurringExpense, RecurringExpense } from './types'
 
 export function useExpenses() {
   const { user } = useAuth()
@@ -19,6 +19,18 @@ export function useBudgets() {
 export function useDashboard() {
   const { user } = useAuth()
   return useSWR(user ? ['dashboard', user.id] : null, ([, id]) => api.getDashboard(id))
+}
+
+export function useAnalyticsSummary(startDate?: string, endDate?: string) {
+  const { user } = useAuth()
+  return useSWR(user ? ['analytics', user.id, startDate, endDate] : null, () =>
+    api.getAnalyticsSummary(startDate, endDate),
+  )
+}
+
+export function useRecurringExpenses() {
+  const { user } = useAuth()
+  return useSWR(user ? ['recurring-expenses', user.id] : null, () => api.getRecurringExpenses())
 }
 
 export function useNotifications() {
@@ -47,7 +59,11 @@ function useRefreshSpending() {
   return useCallback(
     () =>
       mutate(
-        (key) => Array.isArray(key) && ['expenses', 'budgets', 'dashboard', 'notifications'].includes(key[0] as string),
+        (key) =>
+          Array.isArray(key) &&
+          ['expenses', 'budgets', 'dashboard', 'notifications', 'analytics', 'recurring-expenses'].includes(
+            key[0] as string,
+          ),
       ),
     [mutate],
   )
@@ -94,4 +110,48 @@ export function useBudgetActions() {
     [refresh],
   )
   return { create, changeLimit }
+}
+
+export function useRecurringActions() {
+  const refresh = useRefreshSpending()
+  const create = useCallback(
+    async (payload: NewRecurringExpense) => {
+      const res = await api.createRecurringExpense(payload)
+      await refresh()
+      return res
+    },
+    [refresh],
+  )
+  const update = useCallback(
+    async (id: number, payload: Partial<RecurringExpense>) => {
+      const res = await api.updateRecurringExpense(id, payload)
+      await refresh()
+      return res
+    },
+    [refresh],
+  )
+  const remove = useCallback(
+    async (id: number) => {
+      await api.deleteRecurringExpense(id)
+      await refresh()
+    },
+    [refresh],
+  )
+  const pause = useCallback(
+    async (id: number) => {
+      const res = await api.pauseRecurringExpense(id)
+      await refresh()
+      return res
+    },
+    [refresh],
+  )
+  const resume = useCallback(
+    async (id: number) => {
+      const res = await api.resumeRecurringExpense(id)
+      await refresh()
+      return res
+    },
+    [refresh],
+  )
+  return { create, update, remove, pause, resume }
 }

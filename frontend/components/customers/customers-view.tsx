@@ -67,7 +67,7 @@ export function CustomersView() {
           </p>
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button
-              onClick={() => login('manager@expensify.app', 'password123')}
+              onClick={() => login({ email: 'manager@expensify.app', password: 'password123' })}
               className="gap-2 bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-600 hover:to-indigo-600 text-white shadow-md"
             >
               <Sparkles className="size-4" />

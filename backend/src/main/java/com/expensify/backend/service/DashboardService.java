@@ -7,7 +7,13 @@ public class DashboardService {
     public Map<String,Object> daily(Long userId){
         LocalDate today=LocalDate.now(); List<Expense> list=expenses.findByUserIdAndExpenseDateBetween(userId,today,today);
         BigDecimal total=BigDecimal.ZERO; Map<String,BigDecimal> categories=new HashMap<>();
-        for(Expense e:list){ total=total.add(e.getAmount()); BigDecimal old=categories.get(e.getCategory()); if(old==null) old=BigDecimal.ZERO; categories.put(e.getCategory(),old.add(e.getAmount())); }
+        for(Expense e:list){ 
+            total=total.add(e.getAmount()); 
+            String cat = e.getCategory() != null ? e.getCategory().name() : "OTHER";
+            BigDecimal old=categories.get(cat); 
+            if(old==null) old=BigDecimal.ZERO; 
+            categories.put(cat,old.add(e.getAmount())); 
+        }
         Map<String,Object> result=new HashMap<>(); result.put("date",today); result.put("totalSpent",total); result.put("categoryTotals",categories); return result;
     }
     public Map<String,BigDecimal> monthly(Long userId){

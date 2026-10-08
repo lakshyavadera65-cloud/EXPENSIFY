@@ -13,7 +13,7 @@ export function ExpenseRow({ expense, action }: { expense: Expense; action?: Rea
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-sm font-medium">{expense.title}</span>
         <span className="truncate text-xs text-muted-foreground">
-          {expense.category} · {format(parseISO(expense.date), 'd MMM')}
+          {expense.category} {expense.paymentMethod ? `· ${expense.paymentMethod}` : ''} · {format(parseISO(expense.date), 'd MMM')}
         </span>
       </div>
       <span className="font-heading text-sm font-semibold tabular-nums">-{money(expense.amount)}</span>
