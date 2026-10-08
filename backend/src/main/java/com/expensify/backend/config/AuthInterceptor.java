@@ -1,7 +1,6 @@
 package com.expensify.backend.config;
 
-import com.expensify.backend.util.JwtUtil;
-import io.jsonwebtoken.Claims;
+import com.expensify.backend.service.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
@@ -9,6 +8,12 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
+    private final JwtService jwtService;
+
+    public AuthInterceptor(JwtService jwtService) {
+        this.jwtService = jwtService;
+    }
+
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         if (request.getMethod().equals("OPTIONS")) return true;
@@ -21,12 +26,18 @@ public class AuthInterceptor implements HandlerInterceptor {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return false;
         }
-        
+
         try {
             String token = header.substring(7);
-            Claims claims = JwtUtil.validateToken(token);
-            request.setAttribute("userId", Long.parseLong(claims.getSubject()));
-            request.setAttribute("userRole", claims.get("role", String.class));
+            if (!jwtService.isTokenValid(token)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return false;
+            }
+            Long userId = jwtService.extractUserId(token);
+            String role = jwtService.extractRole(token);
+            request.setAttribute("authenticatedUserId", userId);
+            request.setAttribute("userId", userId);
+            request.setAttribute("userRole", role);
             return true;
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -34,4 +45,3 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
     }
 }
-
