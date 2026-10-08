@@ -12,7 +12,7 @@ This README covers all three parts of the project:
 
 ## Table of Contents
 
-- [System Overview](#system-overview)
+- [Architecture](#architecture)
 - [Backend](#backend)
 - [Database](#database)
 - [Frontend](#frontend)
@@ -20,25 +20,115 @@ This README covers all three parts of the project:
 - [Deployment](#deployment)
 - [Team and Contracts](#team-and-contracts)
 
-## System Overview
+## Architecture
 
-```
-Frontend  ->  Backend API  ->  PostgreSQL Database
-(UI)          (Spring Boot)    (tables)
+### High-level system architecture
+
+```mermaid
+flowchart LR
+    U["Users<br/>Customer, Employee, Manager, Head, Admin"] --> F["Frontend<br/>(UI)"]
+    F -->|"REST / JSON"| B["Backend API<br/>Spring Boot"]
+    B -->|"JPA"| D[("PostgreSQL<br/>Database")]
+    B -->|"weather and location"| W["Weather Service"]
+    B -->|"optional"| E["Email Service"]
 ```
 
-Inside the backend:
+### Backend layered architecture
 
-```
-Controller -> Service -> Repository -> Database
+```mermaid
+flowchart TB
+    subgraph API["Controller layer"]
+        C1["AuthController"]
+        C2["ExpenseController"]
+        C3["BudgetController"]
+        C4["DashboardController"]
+        C5["ManagerController"]
+        C6["NotificationController"]
+        C7["LocationAlertController"]
+        C8["HealthController"]
+    end
+    subgraph SVC["Service layer"]
+        S1["UserService"]
+        S2["ExpenseService"]
+        S3["BudgetService"]
+        S4["BudgetAlertService"]
+        S5["DashboardService"]
+        S6["ManagerService"]
+        S7["LocationAlertService"]
+        S8["PaymentAlertService"]
+    end
+    subgraph REPO["Repository layer"]
+        R1["AppUserRepository"]
+        R2["ExpenseRepository"]
+        R3["BudgetRepository"]
+        R4["NotificationRepository"]
+    end
+    DB[("PostgreSQL")]
+
+    C1 --> S1
+    C2 --> S2
+    C3 --> S3
+    C4 --> S5
+    C5 --> S6
+    C6 --> S4
+    C7 --> S7
+    S1 --> R1
+    S2 --> R2
+    S3 --> R3
+    S4 --> R4
+    S5 --> R2
+    S6 --> R1
+    S7 --> R4
+    S8 --> R4
+    R1 --> DB
+    R2 --> DB
+    R3 --> DB
+    R4 --> DB
+    S7 --> WS["WeatherService"]
+    S4 --> ES["EmailService"]
 ```
 
-- **Controller:** receives requests from the frontend.
-- **Service:** contains the business logic.
-- **Repository:** talks to the database.
-- **Model:** represents a database table.
+| Layer | Responsibility |
+|-------|----------------|
+| **Controller** | Receives requests from the frontend and returns responses |
+| **Service** | Contains the business logic |
+| **Repository** | Talks to the database |
+| **Model** | Represents a database table |
 
 > The controller receives the request, the service does the work, the repository communicates with the database, and the model represents the table.
+
+### Request flow example: adding an expense
+
+```mermaid
+sequenceDiagram
+    participant F as Frontend
+    participant C as ExpenseController
+    participant S as ExpenseService
+    participant A as BudgetAlertService
+    participant R as ExpenseRepository
+    participant D as PostgreSQL
+
+    F->>C: POST expense (ExpenseRequest)
+    C->>S: add expense
+    S->>R: save
+    R->>D: INSERT
+    D-->>R: saved
+    S->>A: check budget usage
+    A-->>S: alert if 80%, 85%, 90%, 95% or 100% reached
+    S-->>C: result
+    C-->>F: response
+```
+
+### Roles
+
+```mermaid
+flowchart TD
+    Admin --> Head --> Manager
+    Manager -->|"manages up to 1000"| Customer
+    Employee
+```
+
+The role hierarchy above is a simplified view of `UserRole`. Check `UserRole.java` and `TEAM_API_CONTRACT.md` for the exact permissions.
 
 ---
 
