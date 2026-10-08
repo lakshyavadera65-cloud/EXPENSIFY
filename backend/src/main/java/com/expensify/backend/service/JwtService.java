@@ -15,6 +15,7 @@ public class JwtService {
     private static final String SECRET = "expensify-secret-key-32-bytes-minimum-length-for-hmac-sha-256";
     private static final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
     private static final long EXPIRATION_TIME = 86400000; // 24 hours
+    private static final long REFRESH_EXPIRATION_TIME = 604800000; // 7 days
 
     public String generateToken(Long userId) {
         return generateToken(userId, "CUSTOMER");
@@ -23,6 +24,7 @@ public class JwtService {
     public String generateToken(Long userId, String role) {
         return Jwts.builder()
                 .setSubject(String.valueOf(userId))
+                .claim("type", "access")
                 .claim("role", role)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
@@ -30,10 +32,29 @@ public class JwtService {
                 .compact();
     }
 
+    public String generateRefreshToken(Long userId) {
+        return Jwts.builder()
+                .setSubject(String.valueOf(userId))
+                .claim("type", "refresh")
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + REFRESH_EXPIRATION_TIME))
+                .signWith(SECRET_KEY)
+                .compact();
+    }
+
     public boolean isTokenValid(String token) {
         try {
-            extractAllClaims(token);
-            return !isTokenExpired(token);
+            Claims claims = extractAllClaims(token);
+            return !isTokenExpired(token) && (claims.get("type") == null || "access".equals(claims.get("type")));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean isRefreshTokenValid(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            return !isTokenExpired(token) && "refresh".equals(claims.get("type"));
         } catch (Exception e) {
             return false;
         }

@@ -1,6 +1,7 @@
 package com.expensify.backend.controller;
 import com.expensify.backend.dto.*; import com.expensify.backend.model.AppUser; import com.expensify.backend.service.*; import org.springframework.web.bind.annotation.*; import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 
 @RestController @RequestMapping("/api/location-alerts")
 public class LocationAlertController {
@@ -10,7 +11,7 @@ public class LocationAlertController {
         if (!userId.equals(req.getAttribute("userId"))) throw new SecurityException("Unauthorized");
         return alerts.getAlerts(users.getUser(userId));
     }
-    @PostMapping("/coordinates") public List<LocationAlertResponse> coordinates(@RequestBody LocationRequest r, HttpServletRequest req){
+    @PostMapping("/coordinates") public List<LocationAlertResponse> coordinates(@Valid @RequestBody LocationRequest r, HttpServletRequest req){
         Long userId = (Long) req.getAttribute("userId");
         AppUser temp=new AppUser();temp.setLatitude(r.getLatitude());temp.setLongitude(r.getLongitude());return alerts.getAlerts(temp);
     }

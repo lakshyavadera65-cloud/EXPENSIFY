@@ -1,6 +1,7 @@
 package com.expensify.backend.controller;
 import com.expensify.backend.dto.*; import com.expensify.backend.model.Budget; import com.expensify.backend.service.BudgetService; import org.springframework.web.bind.annotation.*; import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 
 @RestController @RequestMapping("/api/budgets")
 public class BudgetController {
@@ -16,7 +17,7 @@ public class BudgetController {
         if (authenticatedId == null || !authenticatedId.equals(resourceUserId)) throw new RuntimeException("Unauthorized");
     }
 
-    @PostMapping("/user/{userId}") public Budget create(@PathVariable Long userId,@RequestBody BudgetRequest request, HttpServletRequest req){
+    @PostMapping("/user/{userId}") public Budget create(@PathVariable Long userId,@Valid @RequestBody BudgetRequest request, HttpServletRequest req){
         verifyOwnership(req, userId);
         return budgets.create(userId,request);
     }
@@ -24,7 +25,7 @@ public class BudgetController {
         verifyOwnership(req, userId);
         return budgets.getByUser(userId);
     }
-    @PutMapping("/{budgetId}/limit") public Budget changeLimit(@PathVariable Long budgetId,@RequestBody ChangeLimitRequest request, HttpServletRequest req){
+    @PutMapping("/{budgetId}/limit") public Budget changeLimit(@PathVariable Long budgetId,@Valid @RequestBody ChangeLimitRequest request, HttpServletRequest req){
         Long callerId = getAuthId(req);
         if (callerId == null) throw new RuntimeException("Unauthorized");
         return budgets.changeLimit(budgetId, request, callerId);
