@@ -12,10 +12,13 @@ public class BudgetService {
         Budget b=new Budget(); b.setUser(user); b.setBudgetType(r.getBudgetType()); b.setBudgetAmount(r.getBudgetAmount()); b.setLimitAmount(r.getLimitAmount()); b.setStartDate(r.getStartDate()); return budgets.save(b);
     }
     public List<Budget> getByUser(Long userId){return budgets.findByUserId(userId);}
-    public Budget changeLimit(Long budgetId,ChangeLimitRequest r){
+    public Budget get(Long budgetId) {
         java.util.Optional<Budget> foundBudget=budgets.findById(budgetId);
         if(foundBudget.isEmpty()) throw new IllegalArgumentException("Budget not found");
-        Budget b=foundBudget.get();
+        return foundBudget.get();
+    }
+    public Budget changeLimit(Long budgetId,ChangeLimitRequest r){
+        Budget b=get(budgetId);
         if(!encoder.matches(r.getCurrentPassword(),b.getUser().getPasswordHash())) throw new IllegalArgumentException("Wrong password");
         b.setLimitAmount(r.getNewLimit()); return budgets.save(b);
     }
